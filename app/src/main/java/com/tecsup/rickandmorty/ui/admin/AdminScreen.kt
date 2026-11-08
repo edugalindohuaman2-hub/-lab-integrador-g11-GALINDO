@@ -51,6 +51,13 @@ fun AdminScreen(
             }
             Spacer(modifier = Modifier.height(32.dp))
             Button(
+                onClick = { viewModel.sincronizar() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Sincronizar con API")
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
                 onClick = { viewModel.limpiarCache() },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth()

@@ -18,6 +18,7 @@ fun LoginScreen(
     var correo by remember { mutableStateOf("") }
     var clave by remember { mutableStateOf("") }
     val uiState by viewModel.uiState.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.verificarSesionActual { sesion ->
@@ -65,10 +66,8 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        if (correo.isNotBlank() && clave.isNotBlank()) {
-                            viewModel.iniciarSesion(correo, clave) { sesion ->
-                                onLoginExitoso(sesion)
-                            }
+                        viewModel.iniciarSesion(correo, clave) { sesion ->
+                            onLoginExitoso(sesion)
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
@@ -76,17 +75,19 @@ fun LoginScreen(
                     Text("Iniciar Sesión")
                 }
 
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = errorMessage!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
                 when (uiState) {
                     is UiState.Cargando -> {
                         Spacer(modifier = Modifier.height(16.dp))
                         CircularProgressIndicator()
-                    }
-                    is UiState.Error -> {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = (uiState as UiState.Error).mensaje,
-                            color = MaterialTheme.colorScheme.error
-                        )
                     }
                     else -> {}
                 }

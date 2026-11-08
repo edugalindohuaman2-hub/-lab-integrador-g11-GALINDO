@@ -89,11 +89,15 @@ fun AppNav(container: AppContainer) {
         }
 
         composable(Screen.Admin.route) {
-            val viewModel = AdminViewModel(container.itemRepository, container.notificador)
-            AdminScreen(
-                viewModel = viewModel,
-                onBackClick = { navController.popBackStack() }
-            )
+            if (currentUserRole != Rol.ADMIN) {
+                navController.popBackStack()
+            } else {
+                val viewModel = AdminViewModel(container.itemRepository, container.notificador)
+                AdminScreen(
+                    viewModel = viewModel,
+                    onBackClick = { navController.popBackStack() }
+                )
+            }
         }
     }
 }

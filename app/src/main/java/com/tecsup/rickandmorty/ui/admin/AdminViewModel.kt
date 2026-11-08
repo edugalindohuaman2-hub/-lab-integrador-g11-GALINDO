@@ -29,6 +29,18 @@ class AdminViewModel(
         }
     }
 
+    fun sincronizar() {
+        viewModelScope.launch {
+            val result = itemRepository.refrescar()
+            result.onSuccess { count ->
+                cargarEstadisticas()
+                notificador.mostrar("Administración", "Sincronización exitosa: $count elementos.")
+            }.onFailure { e ->
+                notificador.mostrar("Administración", "Error al sincronizar: ${e.localizedMessage}")
+            }
+        }
+    }
+
     fun limpiarCache() {
         viewModelScope.launch {
             itemRepository.limpiarCache()
