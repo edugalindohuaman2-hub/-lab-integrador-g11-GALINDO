@@ -32,6 +32,7 @@ fun ListaScreen(
     isAdmin: Boolean
 ) {
     val uiState by viewModel.estado.collectAsState()
+    val aviso by viewModel.aviso.collectAsState()
 
     Scaffold(
         topBar = {
@@ -53,32 +54,52 @@ fun ListaScreen(
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            when (val state = uiState) {
-                is UiState.Cargando -> {
-                    Cargando()
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            if (aviso != null) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                ) {
+                    Text(
+                        text = aviso!!,
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
-                is UiState.Error -> {
-                    ErrorView(mensaje = state.mensaje, onReintentar = { viewModel.refrescar() })
-                }
-                is UiState.Exito -> {
-                    val lista = state.datos
-                    if (lista.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No hay personajes disponibles. Toca refrescar.")
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(lista, key = { it.id }) { item ->
-                                ItemRow(
-                                    item = item,
-                                    onClick = { onItemClick(item.id) },
-                                    onFavoriteClick = { viewModel.alternarFavorito(item.id) }
-                                )
+            }
+
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                when (val state = uiState) {
+                    is UiState.Cargando -> {
+                        Cargando()
+                    }
+                    is UiState.Error -> {
+                        ErrorView(mensaje = state.mensaje, onReintentar = { viewModel.refrescar() })
+                    }
+                    is UiState.Exito -> {
+                        val lista = state.datos
+                        if (lista.isEmpty()) {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text("No hay personajes disponibles. Toca refrescar.")
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                items(lista, key = { it.id }) { item ->
+                                    ItemRow(
+                                        item = item,
+                                        onClick = { onItemClick(item.id) },
+                                        onFavoriteClick = { viewModel.alternarFavorito(item.id) }
+                                    )
+                                }
                             }
                         }
                     }

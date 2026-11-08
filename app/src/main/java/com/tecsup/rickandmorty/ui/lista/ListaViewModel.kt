@@ -20,6 +20,9 @@ class ListaViewModel(
     val estado: StateFlow<UiState<List<Item>>> = _estado.asStateFlow()
     val uiState: StateFlow<UiState<List<Item>>> = _estado.asStateFlow()
 
+    private val _aviso = MutableStateFlow<String?>(null)
+    val aviso: StateFlow<String?> = _aviso.asStateFlow()
+
     init {
         viewModelScope.launch {
             itemRepository.items.collect { items ->
@@ -36,14 +39,18 @@ class ListaViewModel(
             if (_estado.value !is UiState.Exito || (_estado.value as UiState.Exito).datos.isEmpty()) {
                 _estado.value = UiState.Cargando
             }
+            _aviso.value = null
             val result = itemRepository.refrescar()
             result.onSuccess { count ->
                 if (count > 0) {
                     notificador.mostrar("Rick & Morty", "Se sincronizaron $count personajes correctamente.")
                 }
-            }.onFailure { e ->
-                if (_estado.value !is UiState.Exito) {
-                    _estado.value = UiState.Error(e.localizedMessage ?: "Error de red al actualizar")
+            }.onFailure { _ ->
+                val guardadas = itemRepository.cantidadGuardada()
+                if (guardadas == 0) {
+                    _estado.value = UiState.Error("No hay conexión a internet")
+                } else {
+                    _aviso.value = "Sin conexión: mostrando datos guardados"
                 }
             }
         }
