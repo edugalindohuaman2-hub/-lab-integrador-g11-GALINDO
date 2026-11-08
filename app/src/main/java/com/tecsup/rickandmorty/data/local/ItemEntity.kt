@@ -7,11 +7,10 @@ import androidx.room.PrimaryKey
 data class ItemEntity(
     @PrimaryKey
     val id: Int,
-    val name: String,
-    val status: String,
-    val species: String,
-    val image: String,
-    val favorito: Boolean = false,
+    val titulo: String,
+    val subtitulo: String,
+    val imagenUrl: String?,
+    val esFavorito: Boolean = false,
     val gender: String = "",
     val originName: String = "",
     val locationName: String = ""
