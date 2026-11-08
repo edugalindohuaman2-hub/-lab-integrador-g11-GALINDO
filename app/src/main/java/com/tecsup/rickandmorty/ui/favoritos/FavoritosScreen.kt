@@ -22,7 +22,7 @@ fun FavoritosScreen(
     onItemClick: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.estado.collectAsState()
 
     Scaffold(
         topBar = {

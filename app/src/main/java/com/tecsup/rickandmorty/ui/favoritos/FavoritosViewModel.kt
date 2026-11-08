@@ -16,7 +16,7 @@ class FavoritosViewModel(
     private val itemRepository: ItemRepository
 ) : ViewModel() {
 
-    val uiState: StateFlow<UiState<List<Item>>> = itemRepository.favoritos
+    val estado: StateFlow<UiState<List<Item>>> = itemRepository.favoritos
         .map<List<Item>, UiState<List<Item>>> { favoritos ->
             UiState.Exito(favoritos)
         }
@@ -28,6 +28,8 @@ class FavoritosViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = UiState.Cargando
         )
+
+    val uiState: StateFlow<UiState<List<Item>>> = estado
 
     fun alternarFavorito(id: Int) {
         viewModelScope.launch {
