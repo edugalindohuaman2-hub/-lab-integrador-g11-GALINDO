@@ -1,0 +1,74 @@
+package com.tecsup.rickandmorty.data.repository
+
+import com.tecsup.rickandmorty.data.local.ItemDao
+import com.tecsup.rickandmorty.data.mapper.toDomain
+import com.tecsup.rickandmorty.data.mapper.toEntity
+import com.tecsup.rickandmorty.data.remote.ApiService
+import com.tecsup.rickandmorty.domain.model.Item
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+class ItemRepositoryImpl(
+    private val apiService: ApiService,
+    private val itemDao: ItemDao
+) : ItemRepository {
+
+    override val items: Flow<List<Item>> = itemDao.getAllItems().map { entities ->
+        entities.map { it.toDomain() }
+    }
+
+    override val favoritos: Flow<List<Item>> = itemDao.getFavoriteItems().map { entities ->
+        entities.map { it.toDomain() }
+    }
+
+    override suspend fun refrescar(): Result<Int> {
+        return try {
+            val response = apiService.getCharacters(1)
+            val remoteDtos = response.results
+            val remoteEntities = remoteDtos.map { dto ->
+                val existing = itemDao.getItemById(dto.id)
+                dto.toEntity(favorito = existing?.favorito ?: false)
+            }
+            itemDao.insertAll(remoteEntities)
+            Result.success(remoteEntities.size)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun obtenerDetalle(id: Int): Result<Item> {
+        return try {
+            val localEntity = itemDao.getItemById(id)
+            if (localEntity != null) {
+                Result.success(localEntity.toDomain())
+            } else {
+                val dto = apiService.getCharacterById(id)
+                val entity = dto.toEntity(false)
+                itemDao.insert(entity)
+                Result.success(entity.toDomain())
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun alternarFavorito(id: Int) {
+        val entity = itemDao.getItemById(id)
+        if (entity != null) {
+            val nuevoFavorito = !entity.favorito
+            itemDao.updateFavorite(id, nuevoFavorito)
+        }
+    }
+
+    override suspend fun cantidadGuardada(): Int {
+        return itemDao.getCount()
+    }
+
+    override suspend fun cantidadFavoritos(): Int {
+        return itemDao.getFavoriteCount()
+    }
+
+    override suspend fun limpiarCache() {
+        itemDao.deleteAll()
+    }
+}
