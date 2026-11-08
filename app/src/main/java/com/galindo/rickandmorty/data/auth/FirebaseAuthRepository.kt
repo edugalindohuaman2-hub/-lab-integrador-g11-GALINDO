@@ -24,6 +24,9 @@ class FirebaseAuthRepository(
 
     override fun cerrarSesion() = auth.signOut()
 
+    override val isLoggedIn: Boolean
+        get() = auth.currentUser != null
+
     private suspend fun leerSesion(uid: String, correo: String): Sesion {
         val doc = db.collection("usuarios").document(uid).get().await()
         val rol = if (doc.getString("rol") == "admin") Rol.ADMIN else Rol.USUARIO
