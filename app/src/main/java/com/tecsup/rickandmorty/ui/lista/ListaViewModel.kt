@@ -43,7 +43,7 @@ class ListaViewModel(
             val result = itemRepository.refrescar()
             result.onSuccess { count ->
                 if (count > 0) {
-                    notificador.mostrar("Rick & Morty", "Se sincronizaron $count personajes correctamente.")
+                    notificador.mostrar("Datos actualizados", "Se guardaron $count elementos")
                 }
             }.onFailure { _ ->
                 val guardadas = itemRepository.cantidadGuardada()

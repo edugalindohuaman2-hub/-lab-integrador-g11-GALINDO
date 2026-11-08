@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 
 class NotificadorAndroid(private val context: Context) : Notificador {
     private val channelId = "rickandmorty_channel"
@@ -30,6 +32,12 @@ class NotificadorAndroid(private val context: Context) : Notificador {
 
     @SuppressLint("MissingPermission")
     override fun mostrar(titulo: String, texto: String) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                return
+            }
+        }
+
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(titulo)
