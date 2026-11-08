@@ -15,11 +15,11 @@ class ItemRepositoryImpl(
     private val itemDao: ItemDao
 ) : ItemRepository {
 
-    override val items: Flow<List<Item>> = itemDao.getAllItems().map { entities ->
+    override val items: Flow<List<Item>> = itemDao.todos().map { entities ->
         entities.map { it.toDomain() }
     }
 
-    override val favoritos: Flow<List<Item>> = itemDao.getFavoriteItems().map { entities ->
+    override val favoritos: Flow<List<Item>> = itemDao.favoritos().map { entities ->
         entities.map { it.toDomain() }
     }
 
@@ -31,7 +31,7 @@ class ItemRepositoryImpl(
                 val existing = itemDao.getItemById(dto.id)
                 dto.toEntity(favorito = existing?.esFavorito ?: false)
             }
-            itemDao.insertAll(remoteEntities)
+            itemDao.guardarTodos(remoteEntities)
             Result.success(remoteEntities.size)
         } catch (e: IOException) {
             Result.failure(e)
@@ -63,22 +63,18 @@ class ItemRepositoryImpl(
     }
 
     override suspend fun alternarFavorito(id: Int) {
-        val entity = itemDao.getItemById(id)
-        if (entity != null) {
-            val nuevoFavorito = !entity.esFavorito
-            itemDao.updateFavorite(id, nuevoFavorito)
-        }
+        itemDao.alternarFavorito(id)
     }
 
     override suspend fun cantidadGuardada(): Int {
-        return itemDao.getCount()
+        return itemDao.contar()
     }
 
     override suspend fun cantidadFavoritos(): Int {
-        return itemDao.getFavoriteCount()
+        return itemDao.contarFavoritos()
     }
 
     override suspend fun limpiarCache() {
-        itemDao.deleteAll()
+        itemDao.borrarTodo()
     }
 }
