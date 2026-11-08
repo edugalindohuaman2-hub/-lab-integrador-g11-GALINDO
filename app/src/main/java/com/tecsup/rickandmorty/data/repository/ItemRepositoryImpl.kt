@@ -29,7 +29,7 @@ class ItemRepositoryImpl(
             val remoteDtos = response.results
             val remoteEntities = remoteDtos.map { dto ->
                 val existing = itemDao.getItemById(dto.id)
-                dto.toEntity(favorito = existing?.favorito ?: false)
+                dto.toEntity(favorito = existing?.esFavorito ?: false)
             }
             itemDao.insertAll(remoteEntities)
             Result.success(remoteEntities.size)
@@ -65,7 +65,7 @@ class ItemRepositoryImpl(
     override suspend fun alternarFavorito(id: Int) {
         val entity = itemDao.getItemById(id)
         if (entity != null) {
-            val nuevoFavorito = !entity.favorito
+            val nuevoFavorito = !entity.esFavorito
             itemDao.updateFavorite(id, nuevoFavorito)
         }
     }
