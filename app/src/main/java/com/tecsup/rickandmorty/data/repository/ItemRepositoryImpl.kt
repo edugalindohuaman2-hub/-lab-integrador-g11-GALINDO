@@ -1,8 +1,8 @@
 package com.tecsup.rickandmorty.data.repository
 
 import com.tecsup.rickandmorty.data.local.ItemDao
-import com.tecsup.rickandmorty.data.mapper.toDomain
-import com.tecsup.rickandmorty.data.mapper.toEntity
+import com.tecsup.rickandmorty.data.mapper.aEntity
+import com.tecsup.rickandmorty.data.mapper.aModelo
 import com.tecsup.rickandmorty.data.remote.ApiService
 import com.tecsup.rickandmorty.domain.model.Item
 import kotlinx.coroutines.flow.Flow
@@ -15,24 +15,24 @@ class ItemRepositoryImpl(
     private val itemDao: ItemDao
 ) : ItemRepository {
 
-    override val items: Flow<List<Item>> = itemDao.todos().map { entities ->
-        entities.map { it.toDomain() }
+    override val items: Flow<List<Item>> = itemDao.todos().map { lista ->
+        lista.map { it.aModelo() }
     }
 
-    override val favoritos: Flow<List<Item>> = itemDao.favoritos().map { entities ->
-        entities.map { it.toDomain() }
+    override val favoritos: Flow<List<Item>> = itemDao.favoritos().map { lista ->
+        lista.map { it.aModelo() }
     }
 
     override suspend fun refrescar(): Result<Int> {
         return try {
+            val favoritos = itemDao.idsFavoritos().toSet()
             val response = apiService.listar("alive")
             val remoteDtos = response.results
-            val remoteEntities = remoteDtos.map { dto ->
-                val existing = itemDao.getItemById(dto.id)
-                dto.toEntity(favorito = existing?.esFavorito ?: false)
+            val nuevos = remoteDtos.map { dto ->
+                dto.aEntity(esFavorito = dto.id in favoritos)
             }
-            itemDao.guardarTodos(remoteEntities)
-            Result.success(remoteEntities.size)
+            itemDao.guardarTodos(nuevos)
+            Result.success(nuevos.size)
         } catch (e: IOException) {
             Result.failure(e)
         } catch (e: HttpException) {
@@ -46,12 +46,13 @@ class ItemRepositoryImpl(
         return try {
             val localEntity = itemDao.getItemById(id)
             if (localEntity != null) {
-                Result.success(localEntity.toDomain())
+                Result.success(localEntity.aModelo())
             } else {
                 val dto = apiService.obtenerDetalle(id)
-                val entity = dto.toEntity(false)
+                val favoritos = itemDao.idsFavoritos().toSet()
+                val entity = dto.aEntity(esFavorito = dto.id in favoritos)
                 itemDao.insert(entity)
-                Result.success(entity.toDomain())
+                Result.success(entity.aModelo())
             }
         } catch (e: IOException) {
             Result.failure(e)

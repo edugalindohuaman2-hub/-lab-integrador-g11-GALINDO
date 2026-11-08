@@ -4,13 +4,13 @@ import com.tecsup.rickandmorty.data.local.ItemEntity
 import com.tecsup.rickandmorty.data.remote.dto.ItemDto
 import com.tecsup.rickandmorty.domain.model.Item
 
-fun ItemDto.toEntity(favorito: Boolean = false): ItemEntity {
+fun ItemDto.aEntity(esFavorito: Boolean = false): ItemEntity {
     return ItemEntity(
         id = id,
         titulo = name,
         subtitulo = "$species - $status",
         imagenUrl = image,
-        esFavorito = favorito,
+        esFavorito = esFavorito,
         gender = gender ?: "",
         originName = origin?.name ?: "",
         locationName = location?.name ?: ""
@@ -30,7 +30,7 @@ fun ItemDto.aModelo(favorito: Boolean = false): Item {
     )
 }
 
-fun ItemEntity.toDomain(): Item {
+fun ItemEntity.aModelo(): Item {
     return Item(
         id = id,
         titulo = titulo,
@@ -43,11 +43,11 @@ fun ItemEntity.toDomain(): Item {
     )
 }
 
-fun ItemDto.toDomain(favorito: Boolean = false): Item {
-    return aModelo(favorito)
-}
+fun ItemEntity.toDomain(): Item = aModelo()
+fun ItemDto.toEntity(favorito: Boolean = false): ItemEntity = aEntity(favorito)
+fun ItemDto.toDomain(favorito: Boolean = false): Item = aModelo(favorito)
 
-fun Item.toEntity(): ItemEntity {
+fun Item.aEntity(): ItemEntity {
     return ItemEntity(
         id = id,
         titulo = titulo,
@@ -59,3 +59,5 @@ fun Item.toEntity(): ItemEntity {
         locationName = locationName
     )
 }
+
+fun Item.toEntity(): ItemEntity = aEntity()
