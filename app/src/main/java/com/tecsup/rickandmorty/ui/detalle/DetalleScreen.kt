@@ -68,7 +68,7 @@ fun DetalleScreen(
                             style = MaterialTheme.typography.headlineMedium
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Divider()
+                        HorizontalDivider()
                         Spacer(modifier = Modifier.height(8.dp))
                         DetalleRow("Estado", item.status)
                         DetalleRow("Especie", item.species)

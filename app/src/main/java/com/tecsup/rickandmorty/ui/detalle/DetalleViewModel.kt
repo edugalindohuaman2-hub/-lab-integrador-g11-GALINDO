@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class DetalleViewModel(
-    private val itemId: Int,
+    val id: Int,
     private val itemRepository: ItemRepository
 ) : ViewModel() {
 
@@ -25,7 +25,7 @@ class DetalleViewModel(
     fun cargarDetalle() {
         viewModelScope.launch {
             _uiState.value = UiState.Cargando
-            val result = itemRepository.obtenerDetalle(itemId)
+            val result = itemRepository.obtenerDetalle(id)
             result.onSuccess { item ->
                 _uiState.value = UiState.Exito(item)
             }.onFailure { e ->
@@ -36,7 +36,7 @@ class DetalleViewModel(
 
     fun alternarFavorito() {
         viewModelScope.launch {
-            itemRepository.alternarFavorito(itemId)
+            itemRepository.alternarFavorito(id)
             cargarDetalle()
         }
     }
