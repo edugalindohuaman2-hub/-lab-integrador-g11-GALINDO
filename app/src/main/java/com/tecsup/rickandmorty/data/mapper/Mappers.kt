@@ -21,11 +21,10 @@ fun ItemDto.toEntity(favorito: Boolean = false): ItemEntity {
 fun ItemEntity.toDomain(): Item {
     return Item(
         id = id,
-        name = name,
-        status = status,
-        species = species,
-        image = image,
-        favorito = favorito,
+        titulo = name,
+        subtitulo = "$species - $status",
+        imagenUrl = image,
+        esFavorito = favorito,
         gender = gender,
         originName = originName,
         locationName = locationName
@@ -35,11 +34,10 @@ fun ItemEntity.toDomain(): Item {
 fun ItemDto.toDomain(favorito: Boolean = false): Item {
     return Item(
         id = id,
-        name = name,
-        status = status,
-        species = species,
-        image = image,
-        favorito = favorito,
+        titulo = name,
+        subtitulo = "$species - $status",
+        imagenUrl = image,
+        esFavorito = favorito,
         gender = gender ?: "",
         originName = origin?.name ?: "",
         locationName = location?.name ?: ""
@@ -49,11 +47,11 @@ fun ItemDto.toDomain(favorito: Boolean = false): Item {
 fun Item.toEntity(): ItemEntity {
     return ItemEntity(
         id = id,
-        name = name,
+        name = titulo,
         status = status,
         species = species,
-        image = image,
-        favorito = favorito,
+        image = imagenUrl ?: "",
+        favorito = esFavorito,
         gender = gender,
         originName = originName,
         locationName = locationName
