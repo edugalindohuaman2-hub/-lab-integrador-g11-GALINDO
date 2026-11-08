@@ -6,11 +6,9 @@ import com.tecsup.rickandmorty.data.repository.ItemRepository
 import com.tecsup.rickandmorty.domain.model.Item
 import com.tecsup.rickandmorty.notification.Notificador
 import com.tecsup.rickandmorty.ui.UiState
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class ListaViewModel(
@@ -18,42 +16,35 @@ class ListaViewModel(
     private val notificador: Notificador
 ) : ViewModel() {
 
-    private val mockItems = listOf(
-        Item(1, "Rick Sanchez", "Human - Alive", "https://rickandmortyapi.com/api/character/avatar/1.jpeg", false, "Male", "Earth", "Citadel"),
-        Item(2, "Morty Smith", "Human - Alive", "https://rickandmortyapi.com/api/character/avatar/2.jpeg", true, "Male", "Earth", "Citadel"),
-        Item(3, "Summer Smith", "Human - Alive", "https://rickandmortyapi.com/api/character/avatar/3.jpeg", false, "Female", "Earth", "Earth"),
-        Item(4, "Beth Smith", "Human - Alive", "https://rickandmortyapi.com/api/character/avatar/4.jpeg", false, "Female", "Earth", "Earth"),
-        Item(5, "Jerry Smith", "Human - Alive", "https://rickandmortyapi.com/api/character/avatar/5.jpeg", false, "Male", "Earth", "Earth")
-    )
-
-    val estado: StateFlow<UiState<List<Item>>> = itemRepository.items
-        .map<List<Item>, UiState<List<Item>>> { items ->
-            if (items.isEmpty()) UiState.Exito(mockItems) else UiState.Exito(items)
-        }
-        .catch {
-            emit(UiState.Exito(mockItems))
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = UiState.Exito(mockItems)
-        )
-
-    val uiState: StateFlow<UiState<List<Item>>> = estado
+    private val _estado = MutableStateFlow<UiState<List<Item>>>(UiState.Cargando)
+    val estado: StateFlow<UiState<List<Item>>> = _estado.asStateFlow()
+    val uiState: StateFlow<UiState<List<Item>>> = _estado.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            itemRepository.items.collect { items ->
+                if (items.isNotEmpty()) {
+                    _estado.value = UiState.Exito(items)
+                }
+            }
+        }
         refrescar()
     }
 
     fun refrescar() {
         viewModelScope.launch {
+            if (_estado.value !is UiState.Exito || (_estado.value as UiState.Exito).datos.isEmpty()) {
+                _estado.value = UiState.Cargando
+            }
             val result = itemRepository.refrescar()
             result.onSuccess { count ->
                 if (count > 0) {
                     notificador.mostrar("Rick & Morty", "Se sincronizaron $count personajes correctamente.")
                 }
-            }.onFailure {
-                // Keep mock items on failure
+            }.onFailure { e ->
+                if (_estado.value !is UiState.Exito) {
+                    _estado.value = UiState.Error(e.localizedMessage ?: "Error de red al actualizar")
+                }
             }
         }
     }

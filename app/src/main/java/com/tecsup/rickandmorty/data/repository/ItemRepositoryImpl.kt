@@ -7,6 +7,8 @@ import com.tecsup.rickandmorty.data.remote.ApiService
 import com.tecsup.rickandmorty.domain.model.Item
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import retrofit2.HttpException
+import java.io.IOException
 
 class ItemRepositoryImpl(
     private val apiService: ApiService,
@@ -23,7 +25,7 @@ class ItemRepositoryImpl(
 
     override suspend fun refrescar(): Result<Int> {
         return try {
-            val response = apiService.getCharacters(1)
+            val response = apiService.listar("alive")
             val remoteDtos = response.results
             val remoteEntities = remoteDtos.map { dto ->
                 val existing = itemDao.getItemById(dto.id)
@@ -31,6 +33,10 @@ class ItemRepositoryImpl(
             }
             itemDao.insertAll(remoteEntities)
             Result.success(remoteEntities.size)
+        } catch (e: IOException) {
+            Result.failure(e)
+        } catch (e: HttpException) {
+            Result.failure(e)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -42,11 +48,15 @@ class ItemRepositoryImpl(
             if (localEntity != null) {
                 Result.success(localEntity.toDomain())
             } else {
-                val dto = apiService.getCharacterById(id)
+                val dto = apiService.obtenerDetalle(id)
                 val entity = dto.toEntity(false)
                 itemDao.insert(entity)
                 Result.success(entity.toDomain())
             }
+        } catch (e: IOException) {
+            Result.failure(e)
+        } catch (e: HttpException) {
+            Result.failure(e)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -31,7 +31,7 @@ fun ListaScreen(
     onAdminClick: () -> Unit,
     isAdmin: Boolean
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.estado.collectAsState()
 
     Scaffold(
         topBar = {

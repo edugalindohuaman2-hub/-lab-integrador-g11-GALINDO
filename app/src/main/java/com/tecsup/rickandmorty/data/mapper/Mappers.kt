@@ -18,6 +18,19 @@ fun ItemDto.toEntity(favorito: Boolean = false): ItemEntity {
     )
 }
 
+fun ItemDto.aModelo(favorito: Boolean = false): Item {
+    return Item(
+        id = id,
+        titulo = name,
+        subtitulo = "$species - $status",
+        imagenUrl = image,
+        esFavorito = favorito,
+        gender = gender ?: "",
+        originName = origin?.name ?: "",
+        locationName = location?.name ?: ""
+    )
+}
+
 fun ItemEntity.toDomain(): Item {
     return Item(
         id = id,
@@ -32,16 +45,7 @@ fun ItemEntity.toDomain(): Item {
 }
 
 fun ItemDto.toDomain(favorito: Boolean = false): Item {
-    return Item(
-        id = id,
-        titulo = name,
-        subtitulo = "$species - $status",
-        imagenUrl = image,
-        esFavorito = favorito,
-        gender = gender ?: "",
-        originName = origin?.name ?: "",
-        locationName = location?.name ?: ""
-    )
+    return aModelo(favorito)
 }
 
 fun Item.toEntity(): ItemEntity {
