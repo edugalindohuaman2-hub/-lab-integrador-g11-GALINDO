@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.galindo.rickandmorty.data.auth.AuthRepository
 import com.galindo.rickandmorty.data.repository.ItemRepository
 import com.galindo.rickandmorty.domain.model.Item
+import com.galindo.rickandmorty.domain.model.Rol
 import com.galindo.rickandmorty.ui.UiState
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.IOException
 
 class ListaViewModel(
@@ -24,21 +27,52 @@ class ListaViewModel(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
-    val uiState: StateFlow<UiState<List<Item>>> = itemRepository.items
-        .map<List<Item>, UiState<List<Item>>> { items ->
-            UiState.Exito(items)
+    private val _query = MutableStateFlow("")
+    val query: StateFlow<String> = _query.asStateFlow()
+
+    private val _esAdmin = MutableStateFlow(false)
+    val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
+
+    fun onQueryChanged(newQuery: String) {
+        _query.value = newQuery
+    }
+
+    val uiState: StateFlow<UiState<List<Item>>> = combine(
+        itemRepository.items,
+        _query
+    ) { items, q ->
+        val filtered = if (q.isBlank()) {
+            items
+        } else {
+            items.filter { item ->
+                item.titulo.contains(q, ignoreCase = true) ||
+                item.subtitulo.contains(q, ignoreCase = true) ||
+                item.name.contains(q, ignoreCase = true) ||
+                item.species.contains(q, ignoreCase = true) ||
+                item.status.contains(q, ignoreCase = true)
+            }
         }
-        .catch { e ->
-            emit(UiState.Error(e.localizedMessage ?: "Error al cargar personajes"))
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = UiState.Cargando
-        )
+        UiState.Exito(filtered) as UiState<List<Item>>
+    }
+    .catch { e ->
+        emit(UiState.Error(e.localizedMessage ?: "Error al cargar personajes") as UiState<List<Item>>)
+    }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = UiState.Cargando
+    )
 
     init {
         refrescar()
+        verificarRol()
+    }
+
+    private fun verificarRol() {
+        viewModelScope.launch {
+            val sesion = authRepository.sesionActual()
+            _esAdmin.value = sesion?.rol == Rol.ADMIN
+        }
     }
 
     fun refrescar() {
@@ -65,6 +99,19 @@ class ListaViewModel(
     fun alternarFavorito(id: Int) {
         viewModelScope.launch {
             itemRepository.alternarFavorito(id)
+        }
+    }
+
+    fun eliminarPersonaje(id: Int) {
+        viewModelScope.launch {
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("personajes")
+                    .document(id.toString())
+                    .delete()
+                    .await()
+                refrescar()
+            } catch (_: Exception) {}
         }
     }
 

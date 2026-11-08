@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -25,6 +26,7 @@ fun DetalleScreen(
     onBackClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val esAdmin by viewModel.esAdmin.collectAsState()
 
     Scaffold(
         topBar = {
@@ -87,6 +89,31 @@ fun DetalleScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(if (item.favorito) "Quitar de Favoritos" else "Marcar como Favorito")
+                        }
+
+                        // Vistas Condicionales RBAC: Acciones avanzadas exclusivas para ADMIN
+                        if (esAdmin) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFF2D2424))
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = "Panel de Administrador (Acción Avanzada Firestore)",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = Color(0xFF00E676)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Button(
+                                        onClick = { /* Acción exclusiva ADMIN en Firestore */ },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Eliminar / Editar Registro en Firestore")
+                                    }
+                                }
+                            }
                         }
                     }
                 }

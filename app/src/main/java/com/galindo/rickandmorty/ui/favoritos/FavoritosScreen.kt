@@ -14,15 +14,21 @@ import com.galindo.rickandmorty.ui.UiState
 import com.galindo.rickandmorty.ui.components.Cargando
 import com.galindo.rickandmorty.ui.components.ErrorView
 import com.galindo.rickandmorty.ui.lista.ItemRow
+import com.galindo.rickandmorty.ui.navigation.AppBottomBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoritosScreen(
     viewModel: FavoritosViewModel,
     onItemClick: (Int) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onNavigateHome: () -> Unit,
+    onNavigateFavoritos: () -> Unit,
+    onNavigateAdmin: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val uiState by viewModel.estado.collectAsState()
+    val esAdmin by viewModel.esAdmin.collectAsState()
 
     Scaffold(
         topBar = {
@@ -33,6 +39,16 @@ fun FavoritosScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
+            )
+        },
+        bottomBar = {
+            AppBottomBar(
+                currentRoute = "favoritos",
+                isAdmin = esAdmin,
+                onNavigateHome = onNavigateHome,
+                onNavigateFavoritos = onNavigateFavoritos,
+                onNavigateAdmin = onNavigateAdmin,
+                onLogout = onLogout
             )
         }
     ) { padding ->
@@ -48,7 +64,7 @@ fun FavoritosScreen(
                     val lista = state.datos
                     if (lista.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No tienes personajes favoritos guardados.")
+                            Text("No tienes personajes favoritos")
                         }
                     } else {
                         LazyColumn(
