@@ -10,7 +10,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
 class NotificadorAndroid(private val context: Context) : Notificador {
-    private val channelId = "rickandmorty_channel"
+    private val channelId = "cambios_personajes"
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
     init {
@@ -21,10 +21,10 @@ class NotificadorAndroid(private val context: Context) : Notificador {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Rick and Morty Notificaciones",
+                "Cambios de Personajes",
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Canal para notificaciones de Rick and Morty App"
+                description = "Canal para notificaciones de cambios en personajes de Rick and Morty"
             }
             notificationManager.createNotificationChannel(channel)
         }

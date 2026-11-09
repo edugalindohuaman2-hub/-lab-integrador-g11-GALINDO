@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.tecsup.rickandmorty"
+    namespace = "com.galindo.rickandmorty"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.tecsup.rickandmorty"
+        applicationId = "com.galindo.rickandmorty"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
@@ -84,6 +84,8 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation("io.mockk:mockk:1.13.13")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
