@@ -6,6 +6,9 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
@@ -32,6 +35,11 @@ class NotificadorAndroid(private val context: Context) : Notificador {
 
     @SuppressLint("MissingPermission")
     override fun mostrar(titulo: String, texto: String) {
+        // Mostrar Toast flotante inmediato en el hilo principal
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(context, "$titulo\n$texto", Toast.LENGTH_LONG).show()
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 return

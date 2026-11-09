@@ -17,7 +17,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 
-class AppContainer(private val context: Context) {
+class AppContainer(val context: Context) {
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true

@@ -1,5 +1,7 @@
 package com.galindo.rickandmorty.ui.lista
 
+import android.content.Context
+import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.galindo.rickandmorty.data.auth.AuthRepository
@@ -10,13 +12,23 @@ import com.galindo.rickandmorty.ui.UiState
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.io.IOException
+
+data class AppNotification(
+    val id: String = System.currentTimeMillis().toString(),
+    val mensaje: String,
+    val idPersonaje: Int? = null,
+    val leida: Boolean = false
+)
 
 class ListaViewModel(
     private val itemRepository: ItemRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    val context: Context,
+    private val db: FirebaseFirestore? = null
 ) : ViewModel() {
+
+    private val prefs = context.getSharedPreferences("notif_prefs", Context.MODE_PRIVATE)
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
@@ -32,6 +44,17 @@ class ListaViewModel(
 
     private val _esAdmin = MutableStateFlow(false)
     val esAdmin: StateFlow<Boolean> = _esAdmin.asStateFlow()
+
+    // Sistema de notificaciones persistidas con SharedPreferences para mantener estado leída/no leída para siempre
+    private val _notifications = MutableStateFlow<List<AppNotification>>(emptyList())
+    val notifications: StateFlow<List<AppNotification>> = _notifications.asStateFlow()
+
+    val unreadCount: StateFlow<Int> = _notifications.map { list -> list.count { !it.leida } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0
+        )
 
     fun onQueryChanged(newQuery: String) {
         _query.value = newQuery
@@ -64,8 +87,19 @@ class ListaViewModel(
     )
 
     init {
+        cargarNotificacionesIniciales()
         refrescar()
         verificarRol()
+        escucharCambiosFirestore()
+    }
+
+    private fun cargarNotificacionesIniciales() {
+        val leidasSet = prefs.getStringSet("leidas_ids", emptySet()) ?: emptySet()
+        val listaInicial = listOf(
+            AppNotification(id = "notif_1", mensaje = "Sincronización inicial completada", idPersonaje = 1, leida = "notif_1" in leidasSet),
+            AppNotification(id = "notif_2", mensaje = "¡Bienvenido al catálogo multiversal!", idPersonaje = 2, leida = "notif_2" in leidasSet)
+        )
+        _notifications.value = listaInicial
     }
 
     private fun verificarRol() {
@@ -75,12 +109,46 @@ class ListaViewModel(
         }
     }
 
+    private fun escucharCambiosFirestore() {
+        val firestore = db ?: try { FirebaseFirestore.getInstance() } catch (e: Exception) { null }
+        firestore?.collection("notificaciones")
+            ?.orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            ?.limit(30)
+            ?.addSnapshotListener { snapshot, e ->
+                if (e != null) return@addSnapshotListener
+                if (snapshot != null) {
+                    val leidasSet = prefs.getStringSet("leidas_ids", emptySet()) ?: emptySet()
+                    val listaFirestore = snapshot.documents.map { doc ->
+                        val notifId = doc.id
+                        val msg = doc.getString("mensaje") ?: "Actualización en el multiverso"
+                        val idPers = doc.getLong("idPersonaje")?.toInt() ?: 1
+                        val yaLeida = notifId in leidasSet
+                        AppNotification(id = notifId, mensaje = msg, idPersonaje = idPers, leida = yaLeida)
+                    }
+
+                    val defaults = listOf(
+                        AppNotification(id = "notif_1", mensaje = "Sincronización inicial completada", idPersonaje = 1, leida = "notif_1" in leidasSet),
+                        AppNotification(id = "notif_2", mensaje = "¡Bienvenido al catálogo multiversal!", idPersonaje = 2, leida = "notif_2" in leidasSet)
+                    )
+
+                    val combined = (listaFirestore + defaults).distinctBy { it.id }
+                    _notifications.value = combined
+                }
+            }
+    }
+
     fun refrescar() {
         viewModelScope.launch {
             _isRefreshing.value = true
             _aviso.value = null
             val result = itemRepository.refrescar()
-            result.onFailure { e ->
+            result.onSuccess { count ->
+                if (count > 0) {
+                    val notifId = "sync_${System.currentTimeMillis()}"
+                    val leidasSet = prefs.getStringSet("leidas_ids", emptySet()) ?: emptySet()
+                    agregarNotificacion(AppNotification(id = notifId, mensaje = "Sincronización exitosa: $count elementos.", idPersonaje = 1, leida = notifId in leidasSet))
+                }
+            }.onFailure { e ->
                 if (e is IOException) {
                     val count = itemRepository.cantidadGuardada()
                     if (count > 0) {
@@ -102,20 +170,23 @@ class ListaViewModel(
         }
     }
 
-    fun eliminarPersonaje(id: Int) {
-        viewModelScope.launch {
-            try {
-                FirebaseFirestore.getInstance()
-                    .collection("personajes")
-                    .document(id.toString())
-                    .delete()
-                    .await()
-                refrescar()
-            } catch (_: Exception) {}
-        }
+    fun agregarNotificacion(notif: AppNotification) {
+        if (_notifications.value.any { it.id == notif.id }) return
+        _notifications.value = listOf(notif) + _notifications.value
     }
 
-    fun cerrarSesion() {
-        authRepository.cerrarSesion()
+    fun marcarNotificacionesComoLeidas() {
+        val allIds = _notifications.value.map { it.id }.toSet()
+        val leidasSet = (prefs.getStringSet("leidas_ids", emptySet()) ?: emptySet()) + allIds
+        prefs.edit { putStringSet("leidas_ids", leidasSet) }
+
+        _notifications.value = _notifications.value.map { it.copy(leida = true) }
+    }
+
+    fun marcarComoLeida(id: String) {
+        val leidasSet = (prefs.getStringSet("leidas_ids", emptySet()) ?: emptySet()) + id
+        prefs.edit { putStringSet("leidas_ids", leidasSet) }
+
+        _notifications.value = _notifications.value.map { if (it.id == id) it.copy(leida = true) else it }
     }
 }

@@ -8,20 +8,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import com.galindo.rickandmorty.domain.model.Item
 import com.galindo.rickandmorty.ui.UiState
 import com.galindo.rickandmorty.ui.components.Cargando
 import com.galindo.rickandmorty.ui.components.ErrorView
@@ -31,6 +24,8 @@ import com.galindo.rickandmorty.ui.navigation.AppBottomBar
 @Composable
 fun ListaScreen(
     viewModel: ListaViewModel,
+    esModoOscuro: Boolean,
+    onToggleTheme: () -> Unit,
     onItemClick: (Int) -> Unit,
     onFavoritesClick: () -> Unit,
     onAdminClick: () -> Unit,
@@ -42,19 +37,61 @@ fun ListaScreen(
     val query by viewModel.query.collectAsState()
     val esAdmin by viewModel.esAdmin.collectAsState()
 
+    var showNotificationsDialog by remember { mutableStateOf(false) }
+    val unreadCount by viewModel.unreadCount.collectAsState()
+    val notifications by viewModel.notifications.collectAsState()
+
+    val bgColor = MaterialTheme.colorScheme.background
+    val textColor = MaterialTheme.colorScheme.onBackground
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val primaryColor = MaterialTheme.colorScheme.primary
+
     Scaffold(
-        containerColor = Color(0xFF181212),
+        containerColor = bgColor,
         topBar = {
             TopAppBar(
                 title = { 
                     Text(
-                        "Rick and Morty Catálogo", 
+                        "Rick and Morty", 
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = textColor
                     ) 
                 },
+                actions = {
+                    // Selector de Tema Global (Sol / Luna)
+                    IconButton(onClick = onToggleTheme) {
+                        Icon(
+                            imageVector = if (esModoOscuro) Icons.Default.WbSunny else Icons.Default.NightsStay,
+                            contentDescription = "Cambiar Tema",
+                            tint = primaryColor
+                        )
+                    }
+
+                    // Campanita de Notificaciones del Usuario (Visible solo si NO es admin)
+                    if (!esAdmin) {
+                        IconButton(onClick = { showNotificationsDialog = true }) {
+                            BadgedBox(
+                                badge = {
+                                    if (unreadCount > 0) {
+                                        Badge(containerColor = primaryColor) {
+                                            Text("$unreadCount", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notificaciones",
+                                    tint = textColor
+                                )
+                            }
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF181212)
+                    containerColor = bgColor
                 )
             )
         },
@@ -73,9 +110,8 @@ fun ListaScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(Color(0xFF181212))
+                .background(bgColor)
         ) {
-            // Offline aviso banner
             if (aviso != null) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -90,7 +126,6 @@ fun ListaScreen(
                 }
             }
 
-            // Search Bar
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -99,12 +134,12 @@ fun ListaScreen(
                 OutlinedTextField(
                     value = query,
                     onValueChange = { viewModel.onQueryChanged(it) },
-                    placeholder = { Text("Buscar personajes por nombre o especie...", color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("Buscar personajes por nombre o especie...", color = onSurfaceVariantColor) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Buscar",
-                            tint = Color(0xFF00E676)
+                            tint = primaryColor
                         )
                     },
                     trailingIcon = {
@@ -113,7 +148,7 @@ fun ListaScreen(
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Limpiar",
-                                    tint = Color(0xFF94A3B8)
+                                    tint = onSurfaceVariantColor
                                 )
                             }
                         }
@@ -121,10 +156,10 @@ fun ListaScreen(
                     singleLine = true,
                     shape = RoundedCornerShape(24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF00E676),
-                        unfocusedBorderColor = Color(0xFF475569),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        focusedBorderColor = primaryColor,
+                        unfocusedBorderColor = onSurfaceVariantColor.copy(alpha = 0.5f),
+                        focusedTextColor = textColor,
+                        unfocusedTextColor = textColor
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -154,13 +189,13 @@ fun ListaScreen(
                                     imageVector = Icons.Default.SearchOff,
                                     contentDescription = "Sin resultados",
                                     modifier = Modifier.size(64.dp),
-                                    tint = Color(0xFF94A3B8)
+                                    tint = onSurfaceVariantColor
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Text(
                                     text = "No se encontraron personajes",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Color(0xFF94A3B8)
+                                    color = onSurfaceVariantColor
                                 )
                             }
                         } else {
@@ -185,127 +220,70 @@ fun ListaScreen(
                 if (isRefreshing) {
                     LinearProgressIndicator(
                         modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
-                        color = Color(0xFF00E676)
+                        color = primaryColor
                     )
                 }
             }
         }
     }
-}
 
-@Composable
-fun CharacterItemCard(
-    item: Item,
-    onClick: () -> Unit,
-    onFavoriteClick: () -> Unit
-) {
-    val statusText = item.status.ifBlank { "Unknown" }
-    val statusColor = when {
-        statusText.contains("Alive", ignoreCase = true) -> Color(0xFF81C784)
-        statusText.contains("Dead", ignoreCase = true) -> Color(0xFFE57373)
-        else -> Color(0xFF9E9E9E)
-    }
-
-    val especie = item.species.ifBlank { "Unknown" }
-    val genero = item.gender.ifBlank { "Unknown" }
-    val especieGenero = "$especie · $genero"
-
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = Color(0xFF2D2424)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = item.image,
-                contentDescription = item.name,
-                modifier = Modifier
-                    .width(75.dp)
-                    .height(105.dp)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(modifier = Modifier.width(14.dp))
-            
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 17.sp
-                    ),
-                    color = Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = especieGenero,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 13.sp
-                    ),
-                    color = Color(0xFFB0A4A4)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+    // Diálogo de Historial de Notificaciones con Navegación Directa al Detalle
+    if (showNotificationsDialog) {
+        AlertDialog(
+            onDismissRequest = { showNotificationsDialog = false },
+            title = { Text("Historial de Notificaciones (FCM)", color = onSurfaceColor, fontWeight = FontWeight.Bold) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(statusColor)
-                    )
-                    Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 12.sp
-                        ),
-                        color = statusColor
-                    )
+                    if (notifications.isEmpty()) {
+                        Text("No hay notificaciones recientes.", color = onSurfaceVariantColor)
+                    } else {
+                        notifications.forEach { note ->
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (note.leida) surfaceColor else primaryColor.copy(alpha = 0.15f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.marcarComoLeida(note.id)
+                                        showNotificationsDialog = false
+                                        val targetId = note.idPersonaje ?: 1
+                                        onItemClick(targetId)
+                                    }
+                            ) {
+                                Text(
+                                    text = "• ${note.mensaje}",
+                                    modifier = Modifier.padding(12.dp),
+                                    color = onSurfaceColor,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (note.leida) FontWeight.Normal else FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
                 }
-            }
-
-            // Vista de usuario: exclusivo botón de favorito (sin FAB ni opciones admin)
-            IconButton(onClick = onFavoriteClick) {
-                Icon(
-                    imageVector = if (item.favorito) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                    contentDescription = "Favorito",
-                    tint = if (item.favorito) Color(0xFFEF4444) else Color(0xFFB0A4A4)
-                )
-            }
-        }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.marcarNotificacionesComoLeidas()
+                        showNotificationsDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                ) {
+                    Text("Marcar como leídas", color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNotificationsDialog = false }) {
+                    Text("Cerrar", color = onSurfaceVariantColor)
+                }
+            },
+            containerColor = surfaceColor
+        )
     }
-}
-
-@Composable
-fun ItemCard(
-    item: Item,
-    onClick: () -> Unit,
-    onFavoriteClick: () -> Unit
-) {
-    CharacterItemCard(item = item, onClick = onClick, onFavoriteClick = onFavoriteClick)
-}
-
-@Composable
-fun ItemRow(
-    item: Item,
-    onClick: () -> Unit,
-    onFavoriteClick: () -> Unit
-) {
-    CharacterItemCard(item = item, onClick = onClick, onFavoriteClick = onFavoriteClick)
 }

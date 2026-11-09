@@ -47,7 +47,7 @@ fun CharacterItemCard(
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.elevatedCardColors(
-            containerColor = Color(0xFF3A3131)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Row(
@@ -56,13 +56,13 @@ fun CharacterItemCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Imagen Póster (Izquierda): 80.dp x 110.dp, RoundedCornerShape(12.dp), ContentScale.Crop
+            // Imagen Póster (Izquierda): 82.dp x 112.dp, RoundedCornerShape(12.dp), ContentScale.Crop
             AsyncImage(
                 model = item.image,
                 contentDescription = item.name,
                 modifier = Modifier
-                    .width(80.dp)
-                    .height(110.dp)
+                    .width(82.dp)
+                    .height(112.dp)
                     .clip(RoundedCornerShape(12.dp)),
                 contentScale = ContentScale.Crop
             )
@@ -79,7 +79,7 @@ fun CharacterItemCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp
                     ),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -89,7 +89,7 @@ fun CharacterItemCard(
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontSize = 13.sp
                     ),
-                    color = Color(0xFFB0A8A8)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
@@ -107,7 +107,7 @@ fun CharacterItemCard(
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 13.sp
                         ),
-                        color = Color(0xFFB0A8A8)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -117,7 +117,7 @@ fun CharacterItemCard(
                 Icon(
                     imageVector = if (item.favorito) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
                     contentDescription = "Favorito",
-                    tint = if (item.favorito) Color(0xFFEF4444) else Color.White
+                    tint = if (item.favorito) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                 )
             }
         }

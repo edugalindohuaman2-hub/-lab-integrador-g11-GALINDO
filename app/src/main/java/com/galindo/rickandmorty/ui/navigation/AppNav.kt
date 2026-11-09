@@ -3,10 +3,10 @@ package com.galindo.rickandmorty.ui.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -37,7 +37,11 @@ inline fun <reified VM : ViewModel> viewModelFactory(crossinline creator: () -> 
 }
 
 @Composable
-fun AppNav(container: AppContainer) {
+fun AppNav(
+    container: AppContainer,
+    esModoOscuro: Boolean,
+    onToggleTheme: () -> Unit
+) {
     val navController = rememberNavController()
 
     val startDestination = if (container.authRepository.isLoggedIn) "lista" else "login"
@@ -49,6 +53,8 @@ fun AppNav(container: AppContainer) {
             )
             LoginScreen(
                 viewModel = viewModel,
+                esModoOscuro = esModoOscuro,
+                onToggleTheme = onToggleTheme,
                 onLoginSuccess = {
                     navController.navigate("lista") {
                         popUpTo("login") { inclusive = true }
@@ -58,10 +64,12 @@ fun AppNav(container: AppContainer) {
         }
         composable("lista") {
             val viewModel: ListaViewModel = viewModel(
-                factory = viewModelFactory { ListaViewModel(container.itemRepository, container.authRepository) }
+                factory = viewModelFactory { ListaViewModel(container.itemRepository, container.authRepository, container.context) }
             )
             ListaScreen(
                 viewModel = viewModel,
+                esModoOscuro = esModoOscuro,
+                onToggleTheme = onToggleTheme,
                 onItemClick = { id ->
                     navController.navigate("detalle/$id")
                 },
@@ -93,6 +101,8 @@ fun AppNav(container: AppContainer) {
             )
             DetalleScreen(
                 viewModel = viewModel,
+                esModoOscuro = esModoOscuro,
+                onToggleTheme = onToggleTheme,
                 onBackClick = {
                     navController.popBackStack()
                 }
@@ -104,6 +114,8 @@ fun AppNav(container: AppContainer) {
             )
             FavoritosScreen(
                 viewModel = viewModel,
+                esModoOscuro = esModoOscuro,
+                onToggleTheme = onToggleTheme,
                 onItemClick = { id ->
                     navController.navigate("detalle/$id")
                 },
@@ -137,7 +149,6 @@ fun AppNav(container: AppContainer) {
             val esAdmin by viewModel.esAdmin.collectAsState()
             val isLoadingSession by viewModel.isLoadingSession.collectAsState()
 
-            // Guardia de Navegación RBAC: Si un USUARIO intenta ingresar, redirigir automáticamente a "lista"
             LaunchedEffect(esAdmin, isLoadingSession) {
                 if (!isLoadingSession && !esAdmin) {
                     navController.navigate("lista") {
@@ -148,11 +159,13 @@ fun AppNav(container: AppContainer) {
 
             if (isLoadingSession) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF00E676))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (esAdmin) {
                 AdminScreen(
                     viewModel = viewModel,
+                    esModoOscuro = esModoOscuro,
+                    onToggleTheme = onToggleTheme,
                     onBackClick = {
                         navController.popBackStack()
                     },

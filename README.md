@@ -1,50 +1,39 @@
 # 🚀 Rick and Morty - Android App (Jetpack Compose & M3)
 
 ## 📌 Datos Generales
-- **Proyecto:** Rick and Morty Mobile App
+- **Proyecto:** Rick and Morty Mobile App (`com.galindo.rickandmorty`)
 - **Tema Asignado:** Consumo de la API de Rick and Morty con filtro `status=alive`, persistencia local offline-first con Room, autenticación Firebase Auth & Firestore, y control de roles (Admin / Usuario).
-- **Integrantes:** 
-  - [Tu Nombre / Integrante 1]
-  - [Integrante 2]
+- **Desarrollador:** Desarrollador Único
 
 ---
 
-## 🛠️ Instrucciones de Compilación y Ejecución
-1. **Clonar el repositorio:**
-   ```bash
-   git clone https://github.com/tu-usuario/rickandmorty.git
-   ```
-2. **Abrir en Android Studio:**
-   - Selecciona **Open** y navega hasta la carpeta raíz del proyecto.
-3. **Sincronizar Gradle:**
-   - Asegúrate de tener instalado Android Studio con soporte para Kotlin 2.2.10 y AGP. Haz clic en **Sync Project with Gradle Files**.
-4. **Ejecutar la App:**
-   - Conecta un dispositivo físico o inicia un emulador Android (API 24 o superior).
-   - Haz clic en el botón **Run 'app'** (`Shift + F10`).
+## 🛠️ Requisitos de Compilación
+- **JDK:** 17 o superior
+- **Min SDK:** 24 (Android 7.0+)
+- **Target SDK:** 34 (Android 14)
+- **IDE:** Android Studio Ladybug (o superior)
+- **Gradle:** 8.x / AGP 9.x
 
 ---
 
-## 🔥 Configuración de Firebase Firestore (Roles de Usuario)
-Para probar los roles de **Admin** y **Usuario**, configura tu base de datos en [Firebase Console](https://console.firebase.google.com/):
+## 🚀 Guía de Configuración de Firebase
+Para habilitar la autenticación y el control de roles (RBAC):
 
-1. **Crear proyecto en Firebase** o utilizar el proyecto configurado (`rickandmorty-874ac`).
-2. **Habilitar Authentication (Email/Password):**
-   - Ve a **Authentication** -> **Sign-in method** y habilita **Email/Password**.
-   - Crea usuarios de prueba (ej. `admin@tecsup.edu.pe` y `usuario@tecsup.edu.pe`).
-3. **Crear la colección `usuarios` en Firestore:**
-   - Ve a **Cloud Firestore** -> **Start collection**.
-   - ID de la colección: `usuarios`.
-   - ID del documento: Ingresa el **UID** del usuario autenticado en Firebase Auth (puedes copiarlo desde la pestaña Authentication).
-   - Campos del documento:
-     - `rol` (String): `"admin"` (para el administrador) o `"usuario"` (para usuarios regulares).
-4. **Colocar el archivo `google-services.json`:**
-   - Asegúrate de que el archivo `google-services.json` esté ubicado en la carpeta `app/`.
+1. **Crear proyecto en Firebase:**
+   - Registra tu app en [Firebase Console](https://console.firebase.google.com/) con el nombre de paquete `com.galindo.rickandmorty`.
+   - Descarga el archivo de configuración `google-services.json` y colócalo en la carpeta `app/` del proyecto.
+2. **Habilitar Authentication:**
+   - Activa el proveedor **Email/Password** en la sección **Authentication** -> **Sign-in method**.
+3. **Configurar Cloud Firestore:**
+   - Crea una base de datos en modo de producción o prueba.
+   - Crea la colección `usuarios` donde el ID del documento sea el **UID** del usuario en Firebase Auth y contenga el campo:
+     - `rol` (String): `"ADMIN"` (para administradores) o `"USUARIO"` (para usuarios regulares).
 
 ---
 
 ## 📂 Estructura de Paquetes (Arquitectura MVVM)
 ```text
-com.tecsup.rickandmorty/
+com.galindo.rickandmorty/
 │
 ├── data/
 │   ├── auth/          # Repositorio de autenticación (Firebase Auth & Firestore)
@@ -71,13 +60,15 @@ com.tecsup.rickandmorty/
 
 ---
 
-## 📸 Pruebas de Aceptación (Capturas de Pantalla)
+## 📸 Guía de Capturas de Evidencia Requeridas (8 Secciones)
 
-| Pantalla | Descripción | Captura |
-| :--- | :--- | :--- |
-| **Login** | Pantalla de autenticación con Firebase Auth | *[Adjuntar captura]* |
-| **Lista de Personajes** | Catálogo con filtro `status=alive` y modo offline | *[Adjuntar captura]* |
-| **Detalle** | Información detallada consumiendo `/character/{id}` | *[Adjuntar captura]* |
-| **Favoritos** | Lista filtrada de elementos marcados como favoritos | *[Adjuntar captura]* |
-| **Panel Admin** | Estadísticas de caché y botones de sincronización / limpieza | *[Adjuntar captura]* |
-| **Notificación** | Notificación local del sistema al sincronizar datos | *[Adjuntar captura]* |
+| # | Pantalla / Evidencia | Descripción |
+| :-: | :--- | :--- |
+| **1** | **Login (Auth & Validación)** | Pantalla de inicio de sesión con Firebase Auth y manejo de errores. |
+| **2** | **Lista con Campanita y Tema** | Catálogo principal con selector de tema Sol/Luna y campanita de notificaciones con badge. |
+| **3** | **Detalle del Personaje** | Pantalla de detalle consumiendo el endpoint `/character/{id}`. |
+| **4** | **Favoritos** | Lista filtrada de elementos marcados como favoritos (persistencia en Room). |
+| **5** | **Panel de Administración** | Dashboard con métricas de caché y botón Data Seeder. |
+| **6** | **Notificación Push / Local (FCM)** | Alerta desplegada en el canal `"cambios_personajes"` tras mutaciones en Firestore. |
+| **7** | **Consola de Firebase** | Estructura de colecciones `usuarios` (`rol`) y `personajes`. |
+| **8** | **Pruebas Unitarias** | Ejecución exitosa de `ListaViewModelTest` en JUnit 4 / MockK. |

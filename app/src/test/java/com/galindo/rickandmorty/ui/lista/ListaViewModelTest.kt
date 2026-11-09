@@ -1,5 +1,7 @@
 package com.galindo.rickandmorty.ui.lista
 
+import android.content.Context
+import android.content.SharedPreferences
 import com.galindo.rickandmorty.data.auth.AuthRepository
 import com.galindo.rickandmorty.data.repository.ItemRepository
 import com.galindo.rickandmorty.domain.model.Item
@@ -20,12 +22,16 @@ class ListaViewModelTest {
 
     private val itemRepository: ItemRepository = mockk(relaxed = true)
     private val authRepository: AuthRepository = mockk(relaxed = true)
+    private val context: Context = mockk(relaxed = true)
+    private val prefs: SharedPreferences = mockk(relaxed = true)
 
     private val testDispatcher = UnconfinedTestDispatcher()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every { context.getSharedPreferences(any(), any()) } returns prefs
+        every { prefs.getStringSet(any(), any()) } returns emptySet()
     }
 
     @After
@@ -41,7 +47,7 @@ class ListaViewModelTest {
         every { itemRepository.items } returns flowOf(mockItems)
         coEvery { itemRepository.refrescar() } returns Result.success(1)
 
-        val viewModel = ListaViewModel(itemRepository, authRepository)
+        val viewModel = ListaViewModel(itemRepository, authRepository, context)
 
         val state = viewModel.uiState.value
         assert(state is UiState.Exito) { "Expected UiState.Exito but got $state" }
@@ -57,7 +63,7 @@ class ListaViewModelTest {
         coEvery { itemRepository.refrescar() } returns Result.failure(IOException("No internet"))
         coEvery { itemRepository.cantidadGuardada() } returns 5
 
-        val viewModel = ListaViewModel(itemRepository, authRepository)
+        val viewModel = ListaViewModel(itemRepository, authRepository, context)
 
         assertEquals("Sin conexión: mostrando datos guardados", viewModel.aviso.value)
     }
@@ -69,7 +75,7 @@ class ListaViewModelTest {
         coEvery { itemRepository.refrescar() } returns Result.success(0)
         coEvery { itemRepository.alternarFavorito(characterId) } just Runs
 
-        val viewModel = ListaViewModel(itemRepository, authRepository)
+        val viewModel = ListaViewModel(itemRepository, authRepository, context)
 
         viewModel.alternarFavorito(characterId)
 

@@ -101,12 +101,49 @@ class AdminViewModel(
                 for (p in personajesIniciales) {
                     db.collection("personajes").document(p["id"].toString()).set(p).await()
                 }
+                // Publicar notificación en Firestore colección "notificaciones" para los usuarios
+                db.collection("notificaciones").add(
+                    mapOf(
+                        "mensaje" to "Base de datos inicializada por Administrador",
+                        "idPersonaje" to 1,
+                        "timestamp" to System.currentTimeMillis()
+                    )
+                ).await()
+
                 notificador.mostrar("Admin", "¡Base de datos poblada con éxito (5 personajes)!")
                 cargarPersonajesFirestore()
                 itemRepository.refrescar()
                 onSuccess()
             } catch (e: Exception) {
                 notificador.mostrar("Admin", "Error al poblar BD: ${e.localizedMessage}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun cargarPersonajesDesdeApi(onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val result = itemRepository.refrescar()
+                result.onSuccess { count ->
+                    db.collection("notificaciones").add(
+                        mapOf(
+                            "mensaje" to "Sincronización masiva de $count personajes desde API",
+                            "idPersonaje" to 1,
+                            "timestamp" to System.currentTimeMillis()
+                        )
+                    ).await()
+
+                    notificador.mostrar("Sincronización API", "¡$count personajes cargados desde la API!")
+                    cargarEstadisticas()
+                    onSuccess()
+                }.onFailure { e ->
+                    notificador.mostrar("Admin", "Error al cargar desde API: ${e.localizedMessage}")
+                }
+            } catch (e: Exception) {
+                notificador.mostrar("Admin", "Error al cargar desde API: ${e.localizedMessage}")
             } finally {
                 _isLoading.value = false
             }
@@ -125,11 +162,22 @@ class AdminViewModel(
                     "imagen" to imagenUrl,
                     "imagenUrl" to imagenUrl
                 )
+                val targetId = id ?: System.currentTimeMillis().toString()
+                db.collection("personajes").document(targetId).set(data).await()
+
+                // Publicar notificación en Firestore colección "notificaciones" para los usuarios en tiempo real
+                val tipoAccion = if (id.isNullOrBlank()) "Nuevo personaje disponible" else "Personaje actualizado"
+                db.collection("notificaciones").add(
+                    mapOf(
+                        "mensaje" to "$tipoAccion: $nombre",
+                        "idPersonaje" to (targetId.toIntOrNull() ?: 1),
+                        "timestamp" to System.currentTimeMillis()
+                    )
+                ).await()
+
                 if (id.isNullOrBlank()) {
-                    db.collection("personajes").add(data).await()
                     notificador.mostrar("¡Nuevo Personaje Publicado!", "Se ha añadido a $nombre")
                 } else {
-                    db.collection("personajes").document(id).set(data).await()
                     notificador.mostrar("¡Personaje Actualizado!", "Se modificaron los datos de $nombre")
                 }
                 cargarPersonajesFirestore()
@@ -147,6 +195,16 @@ class AdminViewModel(
         viewModelScope.launch {
             try {
                 db.collection("personajes").document(id).delete().await()
+                
+                // Publicar notificación de eliminación en Firestore colección "notificaciones"
+                db.collection("notificaciones").add(
+                    mapOf(
+                        "mensaje" to "Personaje eliminado del sistema (ID: $id)",
+                        "idPersonaje" to 1,
+                        "timestamp" to System.currentTimeMillis()
+                    )
+                ).await()
+
                 notificador.mostrar("¡Personaje Eliminado!", "El personaje ha sido removido")
                 cargarPersonajesFirestore()
                 itemRepository.refrescar()
